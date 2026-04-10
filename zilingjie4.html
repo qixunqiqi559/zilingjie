@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>《字灵界》- 沉浸式数字档案库 v3.1 (背景/字体修复版)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --archive-gray: #e0e0e0;
+            --ink-black: #121212;
+            --accent-red: #8b0000;
+            --card-bg: rgba(25, 25, 25, 0.6);
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Noto Sans SC', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--archive-gray); 
+            overflow-x: hidden; 
+            line-height: 1.6; 
+        }
+
+        /* 动态背景 - 采用 zilingjie.html 样式 [cite: 1] */
+        #bg-canvas { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100vw; height: 100vh; 
+            z-index: -1; 
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); 
+        }
+        .floating-char { 
+            position: absolute; 
+            font-family: 'Zhi Mang Xing', cursive; 
+            color: rgba(255, 255, 255, 0.03); 
+            user-select: none; 
+            animation: floatUp linear infinite; 
+        }
+        @keyframes floatUp { 
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 
+            10% { opacity: 1; } 
+            90% { opacity: 1; } 
+            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } 
+        }
+
+        /* 导航栏 [cite: 2] */
+        nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 100; }
+        .logo { font-family: 'Zhi Mang Xing', cursive; font-size: 2rem; cursor: pointer; color: var(--archive-gray); }
+        .nav-links span { margin-left: 30px; cursor: pointer; font-size: 0.9rem; letter-spacing: 2px; transition: 0.3s; }
+        .nav-links span:hover, .nav-links span.active { color: var(--accent-red); }
+
+        /* 内容区 [cite: 2] */
+        main { margin-top: 80px; padding: 40px; min-height: calc(100vh - 80px); }
+        .section { display: none; animation: fadeIn 0.5s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 统一卡片容器 [cite: 2] */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 30px; }
+
+        /* 人物卡片样式 - 融合 zilingjie.html 水印效果  */
+        .char-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; display: flex; overflow: hidden; backdrop-filter: blur(5px); position: relative; transition: all 0.3s ease; }
+        .char-card:hover { border-color: #555; }
+        .card-left { flex: 1.2; padding: 20px; border-right: 1px dashed var(--border-color); }
+        .card-right { flex: 1; padding: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+        .card-right::before { 
+            content: attr(data-word); 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-family: 'Zhi Mang Xing', cursive; 
+            font-size: 8rem; 
+            color: rgba(139, 0, 0, 0.05); 
+            z-index: 0; pointer-events: none; 
+            transition: all 0.5s ease;
+        }
+        .char-card:hover .card-right::before { color: rgba(139, 0, 0, 0.15); transform: translate(-50%, -50%) scale(1.1); }
+        
+        .char-name { font-size: 1.5rem; font-weight: bold; color: #fff; margin-bottom: 10px; }
+        .char-meta { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
+        .char-desc { font-size: 0.9rem; margin-bottom: 8px; position: relative; z-index: 1; }
+        .risk-tag { background: rgba(139, 0, 0, 0.2); border: 1px solid var(--accent-red); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; color: #ff6b6b; margin-top: 5px; display: inline-block; position: relative; z-index: 1; }
+
+        /* 画廊 [cite: 2] */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .gallery-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; position: relative; }
+        .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
+        .gallery-info { padding: 12px; }
+
+        /* 管理面板 [cite: 2] */
+        .admin-drawer { position: fixed; top: 80px; right: -400px; width: 380px; height: calc(100vh - 80px); background: #151515; border-left: 2px solid var(--accent-red); z-index: 200; padding: 25px; transition: 0.4s; overflow-y: auto; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
+        .admin-drawer.open { right: 0; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.75rem; color: #666; margin-bottom: 4px; }
+        input, textarea, select { width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; font-size: 0.9rem; }
+        button { cursor: pointer; border: none; border-radius: 4px; transition: 0.3s; }
+        .btn-add { background: var(--accent-red); color: #fff; width: 100%; padding: 10px; margin-top: 10px; }
+        .btn-del { position: absolute; top: 10px; right: 10px; background: rgba(139,0,0,0.8); color: #fff; padding: 4px 8px; font-size: 0.7rem; z-index: 20; display: none; }
+        .edit-mode-on .btn-del { display: block; }
+        .admin-btn { position: fixed; bottom: 30px; right: 30px; background: var(--ink-black); color: #fff; border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 30px; cursor: pointer; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div id="bg-canvas"></div>
+
+    <nav>
+        <div class="logo" onclick="switchTab('home')">字灵界</div>
+        <div class="nav-links">
+            <span class="active" onclick="switchTab('home')" id="nav-home">首页</span>
+            <span onclick="switchTab('worldview')" id="nav-worldview">世界观</span>
+            <span onclick="switchTab('characters')" id="nav-characters">人物档案</span>
+            <span onclick="switchTab('gallery')" id="nav-gallery">画廊管理</span>
+        </div>
+    </nav>
+
+    <div class="admin-drawer" id="adminDrawer">
+        <h3 style="color:var(--accent-red); margin-bottom:20px;">档案覆写权限已激活</h3>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button style="flex:1; background:#333; color:#fff; padding:8px;" onclick="exportData()">导出备份</button>
+            <button style="flex:1; background:#333; color:#fff; padding:8px;" onclick="document.getElementById('importInput').click()">导入档案</button>
+            <input type="file" id="importInput" style="display:none" onchange="importData(event)">
+        </div>
+
+        <select id="moduleSelect" onchange="toggleForm()" class="form-group">
+            <option value="char">人物档案新增</option>
+            <option value="wv">世界观设定新增</option>
+            <option value="gal">画廊素材上传</option>
+        </select>
+
+        <div id="form-char">
+            <input id="c_name" placeholder="姓名" class="form-group">
+            <input id="c_age" placeholder="年龄" class="form-group">
+            <input id="c_word" placeholder="核心字" class="form-group">
+            <input id="c_ability" placeholder="解【能力名称】" class="form-group">
+            <textarea id="c_family" placeholder="家庭环境" rows="2" class="form-group"></textarea>
+            <textarea id="c_bg" placeholder="人物故事背景" rows="4" class="form-group"></textarea>
+            <textarea id="c_desc" placeholder="能力表现效果" rows="3" class="form-group"></textarea>
+            <input id="c_risk" placeholder="风险：..." class="form-group">
+            <button class="btn-add" onclick="addItem('characters')">确认并录入档案</button>
+        </div>
+
+        <div id="form-wv" style="display:none">
+            <input id="w_title" placeholder="设定标题" class="form-group">
+            <textarea id="w_content" placeholder="设定详细内容" rows="6" class="form-group"></textarea>
+            <button class="btn-add" onclick="addItem('worldview')">确认并同步世界观</button>
+        </div>
+
+        <div id="form-gal" style="display:none">
+            <input id="g_desc" placeholder="素材描述" class="form-group">
+            <select id="g_cat" class="form-group">
+                <option>人物</option><option>场景</option><option>道具</option>
+            </select>
+            <input type="file" id="g_file" accept="image/*" class="form-group">
+            <button class="btn-add" onclick="addItem('gallery')">确认并入库</button>
+        </div>
+    </div>
+
+    <main>
+        <section id="home-section" class="section active">
+            <div style="text-align: center; margin-top: 15vh;">
+                <h1 style="font-family:'Zhi Mang Xing'; font-size:6rem; letter-spacing:20px;">字灵界</h1>
+                <p style="font-size:1.2rem; letter-spacing:5px; color:#888;">凝视深渊，字亦凝视你</p>
+                <div style="margin-top:50px; color:#555; font-size:0.9rem; max-width:600px; margin-left:auto; margin-right:auto; line-height:2;">
+                    这是一个关于文字意象的世界。一小部分被选中的人，能够通过凝视古汉字窥见深渊中的心象。
+                </div>
+            </div>
+        </section>
+
+        <section id="worldview-section" class="section">
+            <div id="wv-render-area" style="max-width:850px; margin:0 auto;"></div>
+        </section>
+
+        <section id="characters-section" class="section">
+            <div style="margin-bottom:30px;"><input type="text" style="width:300px; background:rgba(255,255,255,0.05); border:1px solid #333; color:#eee; padding:10px 15px; border-radius:20px;" placeholder="搜索档案关键词..." onkeyup="filterCards()"></div>
+            <div class="grid-container" id="char-render-area"></div>
+        </section>
+
+        <section id="gallery-section" class="section">
+            <div class="gallery-grid" id="gal-render-area"></div>
+        </section>
+    </main>
+
+    <button class="admin-btn" id="adminBtn" onclick="toggleEditMode()">🔒 开启档案编辑</button>
+
+    <script>
+        // ================= 数据初始化 (保留 v3.1 结构) =================
+        const defaultData = {
+            worldview: [
+                { title: "核心机制：【解】", content: "有一小部分人，对古汉字有着超乎寻常的感知。当他们凝视一个字时，那个字会向他们呈现出独特的“意象”。这是一种强烈的心象、感受。同一个字，不同心性、不同境遇的人解出的意象截然不同。这是文字对个人的回应。" },
+                { title: "文字重量与意象溢出", content: "文字重量指一个字可承载的意象复杂度。重字（古老常用字）承载集体意识多，稳定进入状态难度高。若解字者心性不足，会导致【意象溢出】，思维被文字逻辑淹没（如解“众”失败会丧失自我意识）。" },
+                { title: "能力表现与限制", content: "解字是非常内化与抽象的。产生的实物或能力仅存在于解字者的感知场内。在旁人看来，只是该人的行为表现发生了改变。" },
+                { title: "解错字：认知固化", content: "解错是指解字者停止了探索，固执地坚信某一种理解是唯一正确的。这会导致现实感知偏差。" },
+                { title: "识别队友：同频感应", content: "两个处于解字状态的人互相观察时，会产生非语言的认同感。" }
+            ],
+            characters: [
+                { name: "周知叙", age: 20, word: "秩序", abilityName: "解【秩序】", family: "单亲家庭", bg: "生活老成，房间物品摆放极度严苛。", abilityDesc: "感知环境“本该稳定”的部分是否松动。", risk: "容易陷入对秩序的过度执着。" },
+                { name: "窦寂许", age: 19, word: "结构", abilityName: "解【结构】", family: "随审计师母亲生活", bg: "逻辑极干净，喜欢在图书馆发呆。", abilityDesc: "将复杂局面拆解为独立部分，看清因果网。", risk: "容易把人当成节点。" },
+                { name: "钟知云", age: 18, word: "痕迹", abilityName: "解【痕迹】", family: "家庭拮据", bg: "24小时便利店夜班兼职。", abilityDesc: "感知人或事物留下的“持续状态”。", risk: "过度依赖过去信息。" },
+                { name: "章靳", age: 18, word: "氛围", abilityName: "解【氛围】", family: "家底殷实", bg: "性格内敛，习惯戴耳机回避现实。", abilityDesc: "感知空间“无声的部分”。", risk: "容易被他人情绪卷入。" },
+                { name: "庄晦", age: 21, word: "动向", abilityName: "解【动向】", family: "理发店家庭", bg: "全职咖啡师，能捕捉表情。", abilityDesc: "感知一个人“接下来可能会做什么”。", risk: "过度解读。" },
+                { name: "沈珛何", age: 20, word: "规则", abilityName: "解【规则】", family: "军人兼解字世家", bg: "警校二年级学员，体能标兵。", abilityDesc: "感知局面中自己该出现的位置。", risk: "忽略规则外的变数。" },
+                { name: "赵嘉禾", age: 18, word: "磨损", abilityName: "解【磨损】", family: "离异家庭", bg: "24小时洗车店夜班管理员。", abilityDesc: "感知人或事的“承受极限”。", risk: "过度关注问题。" },
+                { name: "莫照尘", age: 19, word: "互动", abilityName: "解【互动】", family: "广告公司家庭", bg: "热爱剧本杀，擅长策略。", abilityDesc: "感知两人之间“正在发生什么”。", risk: "容易把互动当策略。" },
+                { name: "谭亦柯", age: 18, word: "回应", abilityName: "解【回应】", family: "随外公外婆生活", bg: "宠物店兼职，情绪敏感。", abilityDesc: "判断对方是否需要自己。", risk: "过度依赖外界反馈。" },
+                { name: "霍粟", age: 22, word: "承受", abilityName: "解【承受】", family: "建筑工人家庭", bg: "健身房销售，极能吃苦。", abilityDesc: "感知自己当前能撑多久。", risk: "忽视求助必要性。" },
+                { name: "朱泽明", age: 20, word: "声", abilityName: "解【未知】", family: "精英教育", bg: "大明星歌手。", abilityDesc: "能力档案损坏。", risk: "未知。" }
+            ],
+            gallery: []
+        };
+
+        let appData = JSON.parse(localStorage.getItem('ziling_v3_data')) || defaultData;
+        let isEditMode = false;
+
+        function init() { renderAll(); initBG(); }
+        function save() { localStorage.setItem('ziling_v3_data', JSON.stringify(appData)); }
+
+        // ================= 背景逻辑 (恢复 zilingjie.html 版本 [cite: 1]) =================
+        function initBG() {
+            const canvas = document.getElementById('bg-canvas');
+            // 使用词组而非单字 [cite: 1]
+            const words = ['解', '秩序', '结构', '痕迹', '氛围', '动向', '规则', '磨损', '互动', '回应', '承受'];
+            
+            setInterval(() => {
+                if(document.visibilityState === 'hidden') return;
+                const span = document.createElement('span');
+                span.className = 'floating-char';
+                span.innerText = words[Math.floor(Math.random() * words.length)];
+                span.style.left = Math.random() * 90 + 'vw';
+                span.style.fontSize = (Math.random() * 3 + 2) + 'rem';
+                // 恢复随机动画时长逻辑 [cite: 1]
+                span.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                canvas.appendChild(span);
+                
+                setTimeout(() => { span.remove(); }, 20000);
+            }, 800); // 恢复 800ms 的频率 [cite: 1]
+        }
+
+        // ================= 核心渲染逻辑 (保留 v3.1 功能 [cite: 2]) =================
+        function renderAll() {
+            document.getElementById('wv-render-area').innerHTML = appData.worldview.map((v, i) => `
+                <div class="wv-block" style="background:var(--card-bg); border:1px solid var(--border-color); padding:30px; margin-bottom:30px; border-radius:4px; position:relative;">
+                    <button class="btn-del" onclick="deleteItem('worldview', ${i})">抹除</button>
+                    <div style="color:var(--accent-red); font-size:1.4rem; margin-bottom:15px; font-weight:bold;">${v.title}</div>
+                    <div style="line-height:1.8; color:#ccc;">${v.content}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('char-render-area').innerHTML = appData.characters.map((c, i) => `
+                <div class="char-card">
+                    <button class="btn-del" onclick="deleteItem('characters', ${i})">注销档案</button>
+                    <div class="card-left">
+                        <div class="char-name">${c.name}</div>
+                        <div class="char-meta">${c.age}岁 | 家庭：${c.family}</div>
+                        <div class="char-desc" style="color:#aaa;"><strong>背景：</strong>${c.bg}</div>
+                    </div>
+                    <div class="card-right" data-word="${c.word}">
+                        <div style="color:var(--accent-red); font-weight:bold; font-size:1.1rem; z-index:1; position:relative;">${c.abilityName}</div>
+                        <div class="char-desc" style="margin-top:10px;">${c.abilityDesc}</div>
+                        <div class="risk-tag">⚠️ ${c.risk}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('gal-render-area').innerHTML = appData.gallery.length ? appData.gallery.map((g, i) => `
+                <div class="gallery-item">
+                    <button class="btn-del" onclick="deleteItem('gallery', ${i})">删除</button>
+                    <img src="${g.img}">
+                    <div class="gallery-info">
+                        <span style="font-size:0.7rem; background:#8b0000; padding:2px 5px; margin-right:5px;">${g.cat}</span>
+                        <span style="font-size:0.8rem;">${g.desc}</span>
+                    </div>
+                </div>
+            `).join('') : '<div style="color:#444;">暂无素材入库</div>';
+
+            document.body.classList.toggle('edit-mode-on', isEditMode);
+        }
+
+        // ================= 交互功能 (保留 v3.1 [cite: 2]) =================
+        function switchTab(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-links span').forEach(n => n.classList.remove('active'));
+            document.getElementById(id + '-section').classList.add('active');
+            document.getElementById('nav-' + id).classList.add('active');
+        }
+
+        function toggleEditMode() {
+            if(!isEditMode) {
+                if(prompt("请输入覆写权限密码：") === "123456") {
+                    isEditMode = true;
+                    document.getElementById('adminBtn').innerText = "💾 保存并锁定档案";
+                    document.getElementById('adminDrawer').classList.add('open');
+                    renderAll();
+                }
+            } else {
+                isEditMode = false;
+                document.getElementById('adminBtn').innerText = "🔒 开启档案编辑";
+                document.getElementById('adminDrawer').classList.remove('open');
+                renderAll();
+            }
+        }
+
+        async function addItem(type) {
+            if(type === 'characters') {
+                appData.characters.push({
+                    name: document.getElementById('c_name').value,
+                    age: document.getElementById('c_age').value,
+                    word: document.getElementById('c_word').value,
+                    abilityName: document.getElementById('c_ability').value,
+                    family: document.getElementById('c_family').value,
+                    bg: document.getElementById('c_bg').value,
+                    abilityDesc: document.getElementById('c_desc').value,
+                    risk: document.getElementById('c_risk').value
+                });
+            } else if (type === 'worldview') {
+                appData.worldview.push({
+                    title: document.getElementById('w_title').value,
+                    content: document.getElementById('w_content').value
+                });
+            } else if (type === 'gallery') {
+                const file = document.getElementById('g_file').files[0];
+                if(!file) return alert("请选择图片");
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    appData.gallery.push({ img: e.target.result, desc: document.getElementById('g_desc').value, cat: document.getElementById('g_cat').value });
+                    save(); renderAll();
+                };
+                reader.readAsDataURL(file);
+                return;
+            }
+            save(); renderAll();
+            alert("档案已更新");
+        }
+
+        function deleteItem(type, index) {
+            if(confirm("确定抹除该记录吗？")) {
+                appData[type].splice(index, 1);
+                save(); renderAll();
+            }
+        }
+
+        function toggleForm() {
+            const m = document.getElementById('moduleSelect').value;
+            ['char','wv','gal'].forEach(f => document.getElementById('form-'+f).style.display = (m === f ? 'block' : 'none'));
+        }
+
+        function filterCards() {
+            const q = event.target.value.toLowerCase();
+            document.querySelectorAll('.char-card').forEach(c => {
+                c.style.display = c.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
+            });
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(appData)], {type: 'application/json'});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '字灵界档案导出.json'; a.click();
+        }
+
+        function importData(e) {
+            const r = new FileReader();
+            r.onload = (ev) => { appData = JSON.parse(ev.target.result); save(); renderAll(); alert("导入成功"); };
+            r.readAsText(e.target.files[0]);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
