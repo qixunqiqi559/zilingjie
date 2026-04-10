@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>《字灵界》- 沉浸式数字档案库 v3.1 (背景/字体修复版)</title>
+    <title>《字灵界》- 沉浸式数字档案库 v3.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -16,52 +16,42 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Noto Sans SC', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--archive-gray); 
-            overflow-x: hidden; 
-            line-height: 1.6; 
-        }
+        body { font-family: 'Noto Sans SC', sans-serif; background-color: var(--bg-color); color: var(--archive-gray); overflow-x: hidden; line-height: 1.6; }
 
-        /* 动态背景 - 采用 zilingjie.html 样式 [cite: 1] */
-        #bg-canvas { 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100vw; height: 100vh; 
-            z-index: -1; 
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); 
-        }
+        /* 动态背景 - 竖列直上直下滑动 */
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%); }
         .floating-char { 
             position: absolute; 
             font-family: 'Zhi Mang Xing', cursive; 
             color: rgba(255, 255, 255, 0.03); 
             user-select: none; 
-            animation: floatUp linear infinite; 
+            writing-mode: vertical-rl; 
+            text-orientation: upright;
+            animation: floatVertical linear infinite; 
         }
-        @keyframes floatUp { 
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 
+        @keyframes floatVertical { 
+            0% { transform: translateY(100vh); opacity: 0; } 
             10% { opacity: 1; } 
             90% { opacity: 1; } 
-            100% { transform: translateY(-20vh) rotate(360deg); opacity: 0; } 
+            100% { transform: translateY(-100%); opacity: 0; } 
         }
 
-        /* 导航栏 [cite: 2] */
+        /* 导航栏 */
         nav { position: fixed; top: 0; width: 100%; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 100; }
         .logo { font-family: 'Zhi Mang Xing', cursive; font-size: 2rem; cursor: pointer; color: var(--archive-gray); }
         .nav-links span { margin-left: 30px; cursor: pointer; font-size: 0.9rem; letter-spacing: 2px; transition: 0.3s; }
         .nav-links span:hover, .nav-links span.active { color: var(--accent-red); }
 
-        /* 内容区 [cite: 2] */
+        /* 内容区 */
         main { margin-top: 80px; padding: 40px; min-height: calc(100vh - 80px); }
         .section { display: none; animation: fadeIn 0.5s ease; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* 统一卡片容器 [cite: 2] */
+        /* 统一卡片容器 */
         .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 30px; }
 
-        /* 人物卡片样式 - 融合 zilingjie.html 水印效果  */
+        /* 人物卡片样式 */
         .char-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; display: flex; overflow: hidden; backdrop-filter: blur(5px); position: relative; transition: all 0.3s ease; }
         .char-card:hover { border-color: #555; }
         .card-left { flex: 1.2; padding: 20px; border-right: 1px dashed var(--border-color); }
@@ -83,13 +73,13 @@
         .char-desc { font-size: 0.9rem; margin-bottom: 8px; position: relative; z-index: 1; }
         .risk-tag { background: rgba(139, 0, 0, 0.2); border: 1px solid var(--accent-red); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; color: #ff6b6b; margin-top: 5px; display: inline-block; position: relative; z-index: 1; }
 
-        /* 画廊 [cite: 2] */
+        /* 画廊 */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .gallery-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden; position: relative; }
         .gallery-item img { width: 100%; height: 200px; object-fit: cover; }
         .gallery-info { padding: 12px; }
 
-        /* 管理面板 [cite: 2] */
+        /* 管理面板 */
         .admin-drawer { position: fixed; top: 80px; right: -400px; width: 380px; height: calc(100vh - 80px); background: #151515; border-left: 2px solid var(--accent-red); z-index: 200; padding: 25px; transition: 0.4s; overflow-y: auto; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
         .admin-drawer.open { right: 0; }
         .form-group { margin-bottom: 12px; }
@@ -100,6 +90,10 @@
         .btn-del { position: absolute; top: 10px; right: 10px; background: rgba(139,0,0,0.8); color: #fff; padding: 4px 8px; font-size: 0.7rem; z-index: 20; display: none; }
         .edit-mode-on .btn-del { display: block; }
         .admin-btn { position: fixed; bottom: 30px; right: 30px; background: var(--ink-black); color: #fff; border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 30px; cursor: pointer; z-index: 100; }
+        
+        /* 新增：可编辑状态与面板收放按钮的样式 */
+        .edit-mode-on-text { border: 1px dashed var(--accent-red) !important; padding: 2px; border-radius: 4px; }
+        .panel-toggle-btn { position: fixed; bottom: 80px; right: 30px; background: var(--accent-red); color: #fff; border: 1px solid var(--border-color); padding: 10px 20px; border-radius: 30px; cursor: pointer; z-index: 100; display: none; }
     </style>
 </head>
 <body>
@@ -183,10 +177,10 @@
         </section>
     </main>
 
+    <button class="panel-toggle-btn" id="panelToggleBtn" onclick="toggleDrawerState()">↔ 收放编辑面板</button>
     <button class="admin-btn" id="adminBtn" onclick="toggleEditMode()">🔒 开启档案编辑</button>
 
     <script>
-        // ================= 数据初始化 (保留 v3.1 结构) =================
         const defaultData = {
             worldview: [
                 { title: "核心机制：【解】", content: "有一小部分人，对古汉字有着超乎寻常的感知。当他们凝视一个字时，那个字会向他们呈现出独特的“意象”。这是一种强烈的心象、感受。同一个字，不同心性、不同境遇的人解出的意象截然不同。这是文字对个人的回应。" },
@@ -217,49 +211,50 @@
         function init() { renderAll(); initBG(); }
         function save() { localStorage.setItem('ziling_v3_data', JSON.stringify(appData)); }
 
-        // ================= 背景逻辑 (恢复 zilingjie.html 版本 [cite: 1]) =================
+        // ================= 背景文字修改 =================
         function initBG() {
             const canvas = document.getElementById('bg-canvas');
-            // 使用词组而非单字 [cite: 1]
-            const words = ['解', '秩序', '结构', '痕迹', '氛围', '动向', '规则', '磨损', '互动', '回应', '承受'];
+            const mantra = "南无、喝啰怛那、哆啰夜耶．南无、阿唎耶，婆卢羯帝、烁钵啰耶．菩提萨埵婆耶．摩诃萨埵婆耶．摩诃、迦卢尼迦耶．唵，萨皤啰罚曳．数怛那怛写．南无、悉吉栗埵、伊蒙阿唎耶．婆卢吉帝、室佛啰楞驮婆．南无、那啰谨墀．醯利摩诃、皤哆沙咩．萨婆阿他、豆输朋，阿逝孕，萨婆萨哆、那摩婆萨哆，那摩婆伽，摩罚特豆．怛侄他．唵，阿婆卢醯．卢迦帝．迦罗帝．夷醯唎．摩诃菩提萨埵，萨婆萨婆．摩啰摩啰，摩醯摩醯、唎驮孕．俱卢俱卢、羯蒙．度卢度卢、罚阇耶帝．摩诃罚阇耶帝．陀啰陀啰．地唎尼．室佛啰耶．遮啰遮啰．摩么罚摩啰．穆帝隶．伊醯伊醯．室那室那．阿啰参、佛啰舍利．罚沙罚参．佛啰舍耶．呼嚧呼嚧摩啰．呼嚧呼嚧醯利．娑啰娑啰，悉唎悉唎．苏嚧苏嚧．菩提夜、菩提夜．菩驮夜、菩驮夜．弥帝唎夜．那啰谨墀．地利瑟尼那．波夜摩那．娑婆诃．悉陀夜．娑婆诃．摩诃悉陀夜．娑婆诃．悉陀喻艺．室皤啰耶．娑婆诃．那啰谨墀．娑婆诃．摩啰那啰．娑婆诃．悉啰僧、阿穆佉耶，娑婆诃．娑婆摩诃、阿悉陀夜．娑婆诃．者吉啰、阿悉陀夜．娑婆诃．波陀摩、羯悉陀夜．娑婆诃．那啰谨墀、皤伽啰耶．娑婆诃．摩婆利、胜羯啰夜．娑婆诃．南无、喝啰怛那、哆啰夜耶，南无、阿唎耶．婆嚧吉帝．烁皤啰夜．娑婆诃．唵，悉殿都．漫多啰．跋陀耶，娑婆诃．";
+            // 按照标点切分为短句用于竖列展示
+            const words = mantra.split(/[、．，。]/).filter(w => w.trim() !== "");
             
             setInterval(() => {
                 if(document.visibilityState === 'hidden') return;
                 const span = document.createElement('span');
                 span.className = 'floating-char';
                 span.innerText = words[Math.floor(Math.random() * words.length)];
-                span.style.left = Math.random() * 90 + 'vw';
-                span.style.fontSize = (Math.random() * 3 + 2) + 'rem';
-                // 恢复随机动画时长逻辑 [cite: 1]
-                span.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                span.style.left = Math.random() * 95 + 'vw';
+                span.style.fontSize = (Math.random() * 1.5 + 1.2) + 'rem';
+                // 中等速度滑动，设定动画时长为 12 ~ 18 秒
+                span.style.animationDuration = (Math.random() * 6 + 12) + 's';
                 canvas.appendChild(span);
                 
                 setTimeout(() => { span.remove(); }, 20000);
-            }, 800); // 恢复 800ms 的频率 [cite: 1]
+            }, 800);
         }
 
-        // ================= 核心渲染逻辑 (保留 v3.1 功能 [cite: 2]) =================
+        // ================= 内联文字渲染与数据绑定 =================
         function renderAll() {
             document.getElementById('wv-render-area').innerHTML = appData.worldview.map((v, i) => `
-                <div class="wv-block" style="background:var(--card-bg); border:1px solid var(--border-color); padding:30px; margin-bottom:30px; border-radius:4px; position:relative;">
+                <div class="wv-block" data-index="${i}" style="background:var(--card-bg); border:1px solid var(--border-color); padding:30px; margin-bottom:30px; border-radius:4px; position:relative;">
                     <button class="btn-del" onclick="deleteItem('worldview', ${i})">抹除</button>
-                    <div style="color:var(--accent-red); font-size:1.4rem; margin-bottom:15px; font-weight:bold;">${v.title}</div>
-                    <div style="line-height:1.8; color:#ccc;">${v.content}</div>
+                    <div class="editable-text" data-field="title" style="color:var(--accent-red); font-size:1.4rem; margin-bottom:15px; font-weight:bold;">${v.title}</div>
+                    <div class="editable-text" data-field="content" style="line-height:1.8; color:#ccc;">${v.content}</div>
                 </div>
             `).join('');
 
             document.getElementById('char-render-area').innerHTML = appData.characters.map((c, i) => `
-                <div class="char-card">
+                <div class="char-card" data-index="${i}">
                     <button class="btn-del" onclick="deleteItem('characters', ${i})">注销档案</button>
                     <div class="card-left">
-                        <div class="char-name">${c.name}</div>
-                        <div class="char-meta">${c.age}岁 | 家庭：${c.family}</div>
-                        <div class="char-desc" style="color:#aaa;"><strong>背景：</strong>${c.bg}</div>
+                        <div class="char-name editable-text" data-field="name">${c.name}</div>
+                        <div class="char-meta"><span class="editable-text" data-field="age">${c.age}</span>岁 | 家庭：<span class="editable-text" data-field="family">${c.family}</span></div>
+                        <div class="char-desc" style="color:#aaa;"><strong>背景：</strong><span class="editable-text" data-field="bg">${c.bg}</span></div>
                     </div>
                     <div class="card-right" data-word="${c.word}">
-                        <div style="color:var(--accent-red); font-weight:bold; font-size:1.1rem; z-index:1; position:relative;">${c.abilityName}</div>
-                        <div class="char-desc" style="margin-top:10px;">${c.abilityDesc}</div>
-                        <div class="risk-tag">⚠️ ${c.risk}</div>
+                        <div class="editable-text" data-field="abilityName" style="color:var(--accent-red); font-weight:bold; font-size:1.1rem; z-index:1; position:relative;">${c.abilityName}</div>
+                        <div class="char-desc editable-text" data-field="abilityDesc" style="margin-top:10px;">${c.abilityDesc}</div>
+                        <div class="risk-tag">⚠️ <span class="editable-text" data-field="risk">${c.risk}</span></div>
                     </div>
                 </div>
             `).join('');
@@ -276,9 +271,10 @@
             `).join('') : '<div style="color:#444;">暂无素材入库</div>';
 
             document.body.classList.toggle('edit-mode-on', isEditMode);
+            applyEditListeners(); // 渲染完毕后赋予可编辑状态
         }
 
-        // ================= 交互功能 (保留 v3.1 [cite: 2]) =================
+        // ================= 交互功能 =================
         function switchTab(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-links span').forEach(n => n.classList.remove('active'));
@@ -286,19 +282,66 @@
             document.getElementById('nav-' + id).classList.add('active');
         }
 
+        // 面板独立收放逻辑
+        function toggleDrawerState() {
+            document.getElementById('adminDrawer').classList.toggle('open');
+        }
+
+        // 核心权限与数据抓取逻辑
         function toggleEditMode() {
             if(!isEditMode) {
-                if(prompt("请输入覆写权限密码：") === "123456") {
+                if(prompt("权限确认：") === "123456") {
                     isEditMode = true;
-                    document.getElementById('adminBtn').innerText = "💾 保存并锁定档案";
+                    document.getElementById('adminBtn').innerText = "💾 保存修改并锁定";
+                    document.getElementById('panelToggleBtn').style.display = "block";
                     document.getElementById('adminDrawer').classList.add('open');
                     renderAll();
                 }
             } else {
+                // 保存数据：抓取DOM内所有修改过的文本回填至 appData
+                document.querySelectorAll('.wv-block').forEach(block => {
+                    const idx = block.getAttribute('data-index');
+                    appData.worldview[idx].title = block.querySelector('[data-field="title"]').innerText;
+                    appData.worldview[idx].content = block.querySelector('[data-field="content"]').innerText;
+                });
+                document.querySelectorAll('.char-card').forEach(card => {
+                    const idx = card.getAttribute('data-index');
+                    appData.characters[idx].name = card.querySelector('[data-field="name"]').innerText;
+                    appData.characters[idx].age = card.querySelector('[data-field="age"]').innerText;
+                    appData.characters[idx].family = card.querySelector('[data-field="family"]').innerText;
+                    appData.characters[idx].bg = card.querySelector('[data-field="bg"]').innerText;
+                    appData.characters[idx].abilityName = card.querySelector('[data-field="abilityName"]').innerText;
+                    appData.characters[idx].abilityDesc = card.querySelector('[data-field="abilityDesc"]').innerText;
+                    appData.characters[idx].risk = card.querySelector('[data-field="risk"]').innerText;
+                    
+                    // 尝试从新修改的能力名中自动提取"核心字"用于背景水印更新
+                    const aName = appData.characters[idx].abilityName;
+                    const match = aName.match(/【(.*?)】/);
+                    if(match) appData.characters[idx].word = match[1];
+                });
+
+                save();
                 isEditMode = false;
                 document.getElementById('adminBtn').innerText = "🔒 开启档案编辑";
+                document.getElementById('panelToggleBtn').style.display = "none";
                 document.getElementById('adminDrawer').classList.remove('open');
                 renderAll();
+                alert("修改已保存入库。");
+            }
+        }
+
+        // 开关全局文字可编辑属性
+        function applyEditListeners() {
+            if(isEditMode) {
+                document.querySelectorAll('.editable-text').forEach(el => {
+                    el.contentEditable = "true";
+                    el.classList.add('edit-mode-on-text');
+                });
+            } else {
+                document.querySelectorAll('.editable-text').forEach(el => {
+                    el.contentEditable = "false";
+                    el.classList.remove('edit-mode-on-text');
+                });
             }
         }
 
